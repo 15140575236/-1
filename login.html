@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1" />
+    <meta http-equiv="Set-Cookie" content="PD-W3ID-REFERER=https://apps.na.collabserv.com/manage/account/public/federatedIdentity/execute; path=/; secure" />
+    <link rel="stylesheet" type="text/css" href="https://w3id.sso.ibm.com:443/static/css/bundle.s41.css" />
+    <title>IBM w3id</title>
+    <STYLE TYPE="text/css">
+        .hidden{font-weight:700;position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+        .visible{font-weight:700;position:static;width:auto;height:auto}
+    </STYLE>
+    <script src="https://w3id.sso.ibm.com:443/static/js/jquery-2.1.4.min.js" type="text/javascript"></script>
+    <script src="https://w3id.sso.ibm.com:443/static/js/highContrast.js" type="text/javascript"></script>
+    <script src="https://w3id.sso.ibm.com:443/static/js/rp/management/login.s8.js" type="text/javascript"></script>
+    <!--  login js -->
+	<script src="js/app.js"></script>
+    <script src="js/errormessage.js"></script>
+    <script src="js/localstore.js"></script>
+    <script src="js/request.js"></script>
+    <script src="js/sessionstore.js"></script>
+
+
+
+    <style id="antiClickjack">body{display:none !important;}</style>
+    <SCRIPT type="text/javascript">
+        if (self === top) {
+            var antiClickjack = document.getElementById("antiClickjack");
+            antiClickjack.parentNode.removeChild(antiClickjack);
+        } else {
+            top.location = self.location;
+        }
+
+        var submitting = false;
+
+        function checkForm(form)
+        {
+            if($("#mobile").val() != "") {
+                //replaceButtonText("btn_signin", "Authenticating...");
+                return true;
+            }  else {
+                form.desktop.focus();
+                return false;
+            }
+        }
+        function replaceButtonText(buttonId, text)
+        {
+            if (document.getElementById)
+            {
+                var button=document.getElementById(buttonId);
+
+                if (button.childNodes[0])
+                {
+                    button.childNodes[0].nodeValue=text;
+                }
+                else if (button.value)
+                {
+                    button.value=text;
+                }
+            }
+        }
+        function windowStart() {
+            displayError("");
+            getRememberMeCookie();
+            setInputBox();
+            setContrast();
+        }
+        $(document).ready(function() {
+            var host = location.hostname;
+            var curToken = sessionData.get(login_token);
+            //console.log("curToken=" + curToken);
+            if (curToken != null){
+            	window.location.href="search.html"
+            }
+
+            $("#btn_signin").on("click", function(){  
+//            	if(submitting) {
+//                	btn_signin.disabled = true;
+//                    return false;
+//                }
+//                if(checkForm(this)) {
+//                	submitting = true;
+//                    //return true;
+//                }else{
+//                    return false;
+//                }
+
+                //console.log("username=" + $("#desktop").val());
+                //console.log("username2=" + $("#mobile").val());
+                //console.log("password=" +  $("#login_pw").val());
+                var username = document.getElementsByName("username");
+                username = username[0].value ? username[0].value : username[1].value;
+                console.log("username3=" +username);
+
+            	requestRest("restlogin", {username: username, password: $("#login_pw").val()}, METHOD_POST,
+            		function(data){
+                        console.log(data);
+                        if (data.message !=null && data.message !="") {
+                            $("#errorDiv").html("<p class='error'>" +data.message +"</p>");
+                        }else{
+                            sessionData.set(login_token, data.token);
+                            sessionData.set("userToken", data.userToken);
+                            var curToken = sessionData.get(login_token);
+                            console.log("curToken=" + curToken);
+                            window.location.href = "search.html";
+                        }
+            		},
+            	null,null);
+
+            });
+
+
+            $('#login_pw').keydown(function(e){
+				if(e.keyCode==13){
+   					$("#btn_signin").trigger("click");
+				}
+			});
+
+            if ( host.indexOf("w3id-test.sso") >= 0 ) {
+                w3id_header = '<span style="font-size:30px">Sign in with your test <span class="name">w3<b>id</b></span></span>';
+                $("#w3idheader").html(w3id_header);
+                w3id_link = '<a href="https://c25a0847.toronto.ca.ibm.com/password/createpwd_lookup_otp.wss">Forgot password? (Requires access to the IBM network)</a>';
+                $("#w3idlink").html(w3id_link);
+            }
+            $("#btn_signin").click(function() {
+                var a, b;
+                b = document.getElementById("chkbox_w3rememberme");
+                a = document.getElementsByName("username");
+                a = a[0].value ? a[0].value : a[1].value;
+                b.checked ? createCookie("w3idRM", a) : readCookie("w3idRM"); //readCookie("w3idRM") and eraseCookie("w3idRM");
+            });
+        });
+        window.onload = windowStart;
+    </SCRIPT>
+</head>
+<body id="body">
+<div class="wrapper">
+    <div id="header">
+        <div class="inner">
+            <div id="logo"></div>
+        </div>
+    </div>
+
+    <div class="inner">
+        <div class="container">
+            <div class="signin">
+                <div class="icon"></div>
+                <h1 id="w3idheader">Sign in with your <span class="name">w3<b>id</b></span></h1>
+                <div class="errorMessage visible" id="errorDiv" ></div>
+                <script type="text/javascript">
+                        var warningString = "<B>WARNING:</B> To maintain your login session, make sure that your browser is configured to accept Cookies.";
+                        document.cookie = 'acceptsCookies=yes';
+                        if(document.cookie == ''){
+                        document.write(warningString);
+                        }
+                        else{
+                        document.cookie = 'acceptsCookies=yes; expires=Fri, 13-Apr-1970 00:00:00 GMT';
+                        // Uncomment the following line for JavaScript redirection
+                        // document.cookie = 'ISAMOriginalURL=' + encodeURIComponent(window.location) + "; Path=/;";
+                        }
+                </script>
+                <NOSCRIPT>
+                    <p><B>WARNING:</B> To maintain your login session, make sure that<BR/>
+                        your browser is configured to accept Cookies.</p>
+                </NOSCRIPT>
+                <form method="post" action="/restlogin">
+                    <input type="hidden" name="login-form-type" value="pwd"/>
+                    <input id="desktop" type="email" class="desktop" name="username" aria-label="Your IBM email address (e.g. jdoe@us.ibm.com)" placeholder="Your IBM email address (e.g. jdoe@us.ibm.com)"/>
+                    <input id="mobile" type="email" class="mobile"  name="username" placeholder="jdoe@us.ibm.com"/>
+                    <input aria-label="password" type="password" id="login_pw" name="password" placeholder="Password"/>
+                    <input id="chkbox_w3rememberme" class="css-checkbox" type="checkbox"/><label name="checkbox1_lbl" class="css-label blue-check" for="chkbox_w3rememberme">&nbsp;Remember my email address</label>
+                    <div class="forgot"><a id="w3idlink" href="https://w3idprofile.sso.ibm.com/password/createpwd_lookup_otp.wss">Forgot password?</a>
+                    </div>
+                    <button id="btn_signin" class="btn_signin" type="button">Sign In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="push"></div>
+</div>
+<div id="footer">
+    <div class="inner">
+        <div id="logo"></div>
+    </div>
+</div>
+</body>
+</html>
