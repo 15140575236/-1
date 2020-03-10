@@ -4,12 +4,14 @@
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <title>JSON Diff - The semantic JSON compare tool</title>
 
+
         <link rel="stylesheet" href="reset.css" type="text/css" media="screen">
         <link rel="stylesheet" href="throbber.css" type="text/css" media="screen">
         <link rel="stylesheet" href="jdd.css" type="text/css" media="screen">
 
         <script src="./jquery-3.3.1.js" type="text/javascript" charset="utf-8"></script>
 
+        <script src="js/request.js" type="text/javascript" charset="utf-8"></script>
         <script src="jsl/jsl.format.js" type="text/javascript" charset="utf-8"></script>
         <script src="jsl/jsl.parser.js" type="text/javascript" charset="utf-8"></script>
         <script src="jdd.js" type="text/javascript" charset="utf-8"></script>
@@ -39,25 +41,29 @@
             </div>
 
             <div class="initContainer">
-
+<!--                <div class="checkbox container" style="margin-left: 927px">-->
+<!--                    <input name="cbox" type="checkbox" value="Ignore" autocomplete="off" onclick="chbox(true);" id="checkbox1" />Ignore empty difference-->
+<!--                </div>-->
                 <div class="left">
 
-                    <div class="row">
-                    Cache:
-                    <select style="margin-right: 215px" id="cache" name="">
-                        <option value="0">no cache</option>
-                        <option value="7" selected>7</option>
-                        <option value="15">15</option>
-                        <option value="30">30</option>
-                    </select>
 
-                    Select DB:
-                    <select id="dbleft"style="margin: 1px;vertical-align: -1px;">
-                        <option value = "CBS">CBS</option>
-                        <option value = "RDH" selected>RDH</option>
-                        <option value = "IERP">IERP</option>
-                    </select>
-                 </div>
+                    <div class="row">
+                        Cache:
+                        <select id="cache" name="" style="margin-right: 55px">
+                            <option value="0">no cache</option>
+                            <option value="7" selected="">7</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                        </select>
+                        Ignore empty
+                        <input  name="cbox" type="checkbox" value="Ignore" autocomplete="off" onclick="chbox(true);" id="checkbox1" style="margin-right: 55px">
+                        Select DB:
+                        <select id="dbleft" style="margin: 0px;vertical-align: -1px;">
+                            <option value="CBS">CBS</option>
+                            <option value="RDH" selected="">RDH</option>
+                            <option value="IERP">IERP</option>
+                        </select>
+                    </div>
 				<br/>
                     <textarea spellcheck="false" autocomplete="off" id="textarealeft" placeholder="Enter JSON to compare, enter an URL to JSON"></textarea>
                     <pre id="errorLeft" class="error"></pre>
@@ -71,7 +77,9 @@
 
                <div class="center">
 					<!--<input type="button" name="button" class="btn btn-default" value="Input" onclick="show()"   /> -->
-
+<!--                   <div class="checkbox container" style="margin-top: 40px">-->
+<!--                       <input name="cbox" type="checkbox" value="Ignore" autocomplete="off" onclick="chbox(true);" id="checkbox1" />Ignore empty difference-->
+<!--                   </div>-->
                 <!--    <div class="throbber-loader"></div> -->
                    <!-- or try some<br />
 					<a href="#" id="sample">sample data</a> -->
@@ -79,12 +87,33 @@
         </div>
 
                 <div class="right">
+
                     <div class="row">
                         Select DB:
-                        <select id="dbright" autocomplete="off">
+                        <select id="dbright" autocomplete="off" style="margin-right: 120px;">
                             <option value = "CBS" selected>CBS</option>
                             <option value = "RDH">RDH</option>
                             <option value = "IERP">IERP</option>
+                        </select>
+                        Select Key:
+                        <select id="getkey"style="margin: 1px;vertical-align: -1px;">
+                            <option value = "all" selected>all</option>
+                            <option value = "material_master">material_master</option>
+                            <option value = "config_profile" >config_profile</option>
+                            <option value = "sap_characteristics">sap_characteristics</option>
+                            <option value = "BOMs">BOMs</option>
+                            <option value = "assortment_modules">assortment_modules</option>
+                            <option value = "price_conditions">price_conditions</option>
+                            <option value = "titles">titles</option>
+                            <option value = "process_options">process_options</option>
+                            <option value = "swo_relations">swo_relations</option>
+                            <option value = "swo_upgrade_paths">swo_upgrade_paths</option>
+                            <option value = "licensed_functions">licensed_functions</option>
+                            <option value = "supply_functions">supply_functions</option>
+                            <option value = "orderable_supplies">orderable_supplies</option>
+                            <option value = "slice_groups">slice_groups</option>
+                            <option value = "dependencies">dependencies</option>
+                            <option value = "orderable_supplies">orderable_supplies</option>
                         </select>
                     </div>
                     <br/>
@@ -108,61 +137,120 @@
 var btn = document.getElementById("input");
     btn.addEventListener("click",estimate);
 
-<!--var url = decodeURI(window.location.href);-->
-<!--var argsIndex = url .split("?obj=");-->
-<!--var argInt=argsIndex[1];-->
-<!--var arg = argInt;-->
+var clean = document.getElementById("clean");
+    clean.addEventListener("click",cleanUp);
+
+var url = decodeURI(window.location.href);
+var argsIndex = url .split("?obj=");
+var argInt=argsIndex[1];
+var arg = argInt;
 
 function estimate(){
       var leftoptions=$("#dbleft option:selected").val();
       var rightoptions=$("#dbright option:selected").val();
+
+
+
       if(leftoptions === rightoptions){
         alert("Please choose the different DB options");
       }else{
+        cleanUp();
+        progress();
         apileft();
         console.log("1");
         apiright();
       }
     }
+function setURL(DB_value,cache_value,key_value){
+    var url;
+     if(cache_value ==="0"){
+         if(key_value==="all"){
+            url = ""+prefix+"api/v1/"+DB_value+"/diff/"+arg+"";
+         }
+         else{
+             url = ""+prefix+"api/v1/"+DB_value+"/diff/"+arg+"?key="+key_value+"";
+         }
+     }
+     else{
+          if(key_value==="all"){
+            url = ""+prefix+"api/v1/"+DB_value+"/diff/"+arg+"?day="+cache_value+"";
+         }
+         else{
+             url = ""+prefix+"api/v1/"+DB_value+"/diff/"+arg+"?day="+cache_value+"&key="+key_value+"";
+         }
+     }
+     return url;
+}
 
 function apileft(){
     var cache_value=$("#cache option:selected").val();
+    var key_value=$("#getkey option:selected").val();
       var optionsleft=$("#dbleft option:selected").val();
       optionsleft = optionsleft.toLocaleLowerCase();
-      if(cache_value ==="0"){
-        var url = "http://localhost:8088/api/v1/"+optionsleft+"/diff/5799CP2";
-        getData(url,"textarealeft");
-        console.log(url);
-      }else{
-        var url = "http://localhost:8088/api/v1/"+optionsleft+"/diff/5799CP2?day="+cache_value+"";
-        getData(url,"textarealeft");
-        console.log(url)
-      }
+
+      var url=setURL(optionsleft,cache_value,key_value);
+      getData(url,"textarealeft",key_value);
+      console.log(url);
 }
 
 function apiright(){
 var cache_value=$("#cache option:selected").val();
+var key_value=$("#getkey option:selected").val();
 var optionsright=$("#dbright option:selected").val();
 optionsright = optionsright.toLocaleLowerCase();
- if(cache_value ==="0"){
-        var url = "http://localhost:8088/api/v1/"+optionsright+"/diff/5799CP2";
-        getData(url,"textarearight");
-        console.log(url);
-      }else{
-        var url = "http://localhost:8088/api/v1/"+optionsright+"/diff/5799CP2?day="+cache_value+"";
-        getData(url,"textarearight");
-        console.log(url)
-      }
 
+var url=setURL(optionsright,cache_value,key_value);
+ getData(url,"textarearight",key_value);
+ console.log(url);
 }
-
-function getData(url,name){
+function getDataByKey(json,keyfromWeb){
+    var key;
+    for (key in json) {
+        if(key==keyfromWeb){
+           return json[key];
+        }
+    }
+}
+function getData(url,name,key_value){
+console.log("url:"+url);
       $.get(url,function (data) {
-        var jsonFormat = formatJson(data);
-        document.getElementById(name).value=jsonFormat;
+      var jsonFormat;
+      if(key_value==="all"){
+          jsonFormat= formatJson(data);
+
+      }
+      else{
+      console.log(data);
+         data=getDataByKey(data,key_value);
+
+         jsonFormat="{\""+key_value+"\":"+formatJson(data)+"}";
+         //jsonFormat=formatJson(data);
+
+          //var jsonFormat =config.out.replace(/null/g, "\{ \}");
+         //jsonFormat= data;
+      }
+      //jsonFormat=formatJson(jsonFormat);
+       document.getElementById(name).value=jsonFormat;
       });
     }
 
+function cleanUp() {
+        var text = "";
+        document.getElementById("textarealeft").value=text;
+        document.getElementById("textarearight").value=text;
+
+}
+
+function progress() {
+    var textleft = document.getElementById("textarealeft");
+    var textright = document.getElementById("textarearight");
+    console.log(textleft);
+    textleft.removeAttribute('placeholder');
+    textleft.setAttribute('placeholder','In progress...');
+    textright.removeAttribute('placeholder');
+    textright.setAttribute('placeholder','In progress...');
+
+}
 var formatJson = function(json, options) {
                     var reg = null,
                         formatted = '',
@@ -216,7 +304,9 @@ var formatJson = function(json, options) {
                         reg = /\:/g;
                         json = json.replace(reg, ': ');
                     }
-
+                    if(document.getElementById("checkbox1").checked==true){
+                    json = json.replace(/\" \"/g, "\"\"");
+                    }
                     $.each(json.split('\r\n'), function(index, node) {
                         var i = 0,
                             indent = 0,
@@ -245,13 +335,21 @@ var formatJson = function(json, options) {
 </script>
 
 <script type="text/javascript">
-    var clean = document.getElementById("clean");
+var clean = document.getElementById("clean");
     clean.addEventListener("click",cleanUp);
     function cleanUp() {
         var text = "";
         document.getElementById("textarealeft").value=text;
         document.getElementById("textarearight").value=text;
+        var textleft = document.getElementById("textarealeft");
+        var textright = document.getElementById("textarearight");
+        console.log(textleft);
+        textleft.removeAttribute('placeholder');
+        textleft.setAttribute('placeholder','Enter JSON to compare, enter an URL to JSON');
+        textright.removeAttribute('placeholder');
+        textright.setAttribute('placeholder','Enter JSON to compare, enter an URL to JSON');
     }
+
 </script>
 </body>
 </html>
